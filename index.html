@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Will My Money Last? | Retirement Income Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#10305a; --navy2:#1a4480; --ink:#16202b; --muted:#61707f;
+    --line:#e4e9f0; --bg:#eef2f7; --card:#ffffff;
+    --good:#1a7f37; --ok:#b07d00; --bad:#c0392b;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; line-height:1.55; }
+  .hero{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:30px 20px; }
+  .hero .in{ max-width:960px; margin:0 auto; }
+  .hero h1{ font-size:28px; margin:0 0 6px; }
+  .hero p{ margin:0; opacity:.9; font-size:15px; max-width:640px; }
+  .wrap{ max-width:960px; margin:0 auto; padding:24px 20px 60px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px;
+         padding:24px; margin-bottom:22px; box-shadow:0 1px 3px rgba(16,48,90,.05); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:16px; }
+  label{ display:block; font-size:12.5px; font-weight:700; color:var(--muted);
+         text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+  input[type=number]{ width:100%; padding:10px 11px; border:1px solid var(--line);
+         border-radius:9px; font-size:15px; color:var(--ink); }
+  input[type=number]:focus{ outline:2px solid var(--navy2); border-color:var(--navy2); }
+  input[type=range]{ width:100%; accent-color:var(--navy); }
+
+  .mixrow{ margin-top:16px; }
+  .mixbtn{ width:100%; text-align:left; background:#fff; border:1px solid var(--line);
+           border-radius:9px; padding:11px 12px; font-size:15px; cursor:pointer;
+           display:flex; justify-content:space-between; align-items:center; color:var(--ink); }
+  .mixbtn:hover{ border-color:var(--navy2); }
+  .mixedit{ font-size:12.5px; color:var(--navy); font-weight:700; }
+  .mixpanel{ margin-top:12px; padding:14px; background:#f7f9fc; border:1px solid var(--line); border-radius:10px; }
+  .mixlabels{ display:flex; justify-content:space-between; font-size:13px; color:var(--navy); margin-top:6px; font-weight:700; }
+  .mixhint{ font-size:12.5px; color:var(--muted); margin:10px 0 0; }
+
+  .presets{ margin-top:18px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .presets span.lbl{ font-size:12.5px; color:var(--muted); margin-right:2px; }
+  .chip{ background:#eef3fa; border:1px solid var(--line); border-radius:20px;
+         padding:7px 13px; font-size:13px; cursor:pointer; color:var(--navy); font-weight:600; }
+  .chip:hover{ background:#e0e9f6; }
+  .run{ margin-top:18px; background:var(--navy); color:#fff; border:0; border-radius:10px;
+        padding:13px 22px; font-size:15px; font-weight:700; cursor:pointer; }
+  .run:hover{ background:#0c2747; }
+
+  .resgrid{ display:grid; grid-template-columns:210px 1fr; gap:26px; align-items:center; }
+  @media(max-width:600px){ .resgrid{ grid-template-columns:1fr; text-align:center; } }
+  .gauge{ position:relative; width:200px; height:200px; margin:0 auto; }
+  .gauge svg{ transform:rotate(-90deg); }
+  .gauge .pct{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge .pct .big{ font-size:44px; font-weight:800; line-height:1; }
+  .gauge .pct .cap{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .headline{ font-size:24px; font-weight:800; margin:0 0 8px; }
+  .read{ font-size:15.5px; color:var(--ink); margin:0; }
+
+  .ocards{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+  @media(max-width:560px){ .ocards{ grid-template-columns:1fr; } }
+  .ocard{ background:#f5f8fc; border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .ocard.worst{ background:#fbf6f3; }
+  .ocard h4{ margin:0 0 8px; font-size:12.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+  .ocard .big{ font-size:21px; font-weight:800; color:var(--navy); }
+  .ocard.worst .big{ color:#9a3b2c; }
+  .ocard p{ margin:8px 0 0; font-size:13.5px; color:var(--ink); }
+
+  canvas{ margin-top:26px; }
+  .chartcap,.detailline{ font-size:12.5px; color:var(--muted); margin-top:10px; }
+  .legend{ margin-top:16px; display:flex; flex-direction:column; gap:9px; }
+  .legend .lg{ display:flex; gap:11px; align-items:flex-start; font-size:13.5px; color:var(--ink); line-height:1.45; }
+  .legend .sw{ flex:0 0 26px; height:15px; border-radius:3px; margin-top:3px; }
+  .legend .sw.dark{ background:rgba(16,48,90,.20); }
+  .legend .sw.light{ background:rgba(16,48,90,.10); }
+  .legend .sw.line{ height:0; border-top:3px solid var(--navy); margin-top:9px; border-radius:0; }
+  .legend b{ color:var(--navy); }
+  .detailline{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+  details{ margin-top:14px; font-size:13.5px; color:var(--muted); }
+  details summary{ cursor:pointer; font-weight:700; color:var(--navy); }
+  details p{ margin:8px 0 0; }
+  .foot{ font-size:12px; color:var(--muted); margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+  .credit{ text-align:center; font-size:12.5px; color:var(--muted); margin-top:8px; }
+  .credit a{ color:var(--navy); text-decoration:none; font-weight:600; }
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="hero"><div class="in">
+  <h1>Will My Money Last?</h1>
+  <p>Enter a retirement picture and see the odds the savings cover it, tested across 10,000 simulated market histories.</p>
+</div></div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="grid">
+      <div><label>Money saved ($)</label><input id="savings" type="number" value="1000000" step="10000"></div>
+      <div><label>Annual spending ($)</label><input id="spending" type="number" value="40000" step="1000"></div>
+      <div><label>Retirement age</label><input id="retire" type="number" value="65"></div>
+      <div><label>Plan through age</label><input id="endage" type="number" value="95"></div>
+    </div>
+
+    <div class="mixrow">
+      <label>Investment mix</label>
+      <button type="button" class="mixbtn" id="mixBtn">
+        <span id="mixSummary">60% stocks / 40% bonds</span>
+        <span class="mixedit">change</span>
+      </button>
+      <div class="mixpanel hidden" id="mixPanel">
+        <input id="stock" type="range" min="0" max="100" step="5" value="60">
+        <div class="mixlabels"><span id="stockval">60% stocks</span><span id="bondval">40% bonds</span></div>
+        <p class="mixhint">More stocks usually means higher growth but bigger swings. More bonds is steadier but grows slower.</p>
+      </div>
+    </div>
+
+    <div class="presets">
+      <span class="lbl">Try a profile:</span>
+      <span class="chip" data-s="1200000" data-p="45000" data-r="65" data-e="95" data-w="60">Comfortable</span>
+      <span class="chip" data-s="1000000" data-p="40000" data-r="65" data-e="95" data-w="60">Baseline 4%</span>
+      <span class="chip" data-s="700000" data-p="45000" data-r="64" data-e="95" data-w="55">Tight</span>
+      <span class="chip" data-s="900000" data-p="38000" data-r="67" data-e="92" data-w="50">Conservative</span>
+    </div>
+    <button class="run" id="run">Run the simulation</button>
+  </div>
+
+  <div id="results" class="card hidden">
+    <div class="resgrid">
+      <div class="gauge">
+        <svg width="200" height="200" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#e7edf4" stroke-width="11"></circle>
+          <circle id="ring" cx="60" cy="60" r="54" fill="none" stroke="#1a7f37" stroke-width="11"
+                  stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="339.29"></circle>
+        </svg>
+        <div class="pct"><div class="big" id="pctbig">0%</div><div class="cap">chance money lasts</div></div>
+      </div>
+      <div>
+        <p class="headline" id="headline"></p>
+        <p class="read" id="read"></p>
+      </div>
+    </div>
+
+    <div class="ocards">
+      <div class="ocard">
+        <h4>If markets are average</h4>
+        <div class="big" id="typVal"></div>
+        <p id="typSent"></p>
+      </div>
+      <div class="ocard worst">
+        <h4>If markets are bad</h4>
+        <div class="big" id="worstVal"></div>
+        <p id="worstSent"></p>
+      </div>
+    </div>
+
+    <canvas id="chart" height="150"></canvas>
+    <div class="legend">
+      <div class="lg"><span class="sw line"></span><div><b>The middle line</b> is the most likely outcome. Half of the futures end up better than this, half worse.</div></div>
+      <div class="lg"><span class="sw dark"></span><div><b>The dark band</b> is the likely range, where the middle half of all futures land. A typical result sits somewhere in here (in stats terms, the 25th to 75th out of 100).</div></div>
+      <div class="lg"><span class="sw light"></span><div><b>The light band</b> is a wider range that covers about 8 of every 10 futures (the 10th to 90th). Only the rare luckiest and unluckiest cases fall outside it.</div></div>
+    </div>
+    <p class="chartcap">How to read it: moving right, the bands spread apart with age because good and bad luck add up over the years. As long as the shaded area stays well above the bottom, the money holds up. Where the lower edge drops to the floor, those are the futures where the money runs out.</p>
+
+    <p class="detailline" id="detailline"></p>
+
+    <details>
+      <summary>How this works and what it assumes</summary>
+      <p>Each run plays out a fresh string of yearly market returns, takes out your spending, and grows what is left. Doing it 10,000 times shows how often the money survives, including the unlucky runs where weak markets hit early in retirement. Everything is in today's dollars, so spending stays flat in real terms.</p>
+      <p id="assume"></p>
+    </details>
+
+    <p class="foot">Hypothetical illustration using simplified, long-run market assumptions. Not financial advice,
+       a recommendation, or a guarantee of future results. Markets can behave outside these ranges.</p>
+  </div>
+
+  <p class="credit">Prototype by <a href="https://leomgama.github.io" target="_blank" rel="noopener">Leonardo Gama</a></p>
+</div>
+
+<script>
+// ---- Engine (mirrors the Python module exactly) ----------------------------
+const STOCK_MEAN=0.07, STOCK_STD=0.20, BOND_MEAN=0.02, BOND_STD=0.06, CORR=0.0;
+const GOOD="#1a7f37", OK="#b07d00", BAD="#c0392b";
+
+function portfolioParams(w){
+  const mean = w*STOCK_MEAN + (1-w)*BOND_MEAN;
+  const varr = (w*STOCK_STD)**2 + ((1-w)*BOND_STD)**2 + 2*w*(1-w)*CORR*STOCK_STD*BOND_STD;
+  return [mean, Math.sqrt(varr)];
+}
+function lognormalParams(mean, std){
+  const m=1+mean, v=std*std, s2=Math.log(1+v/(m*m));
+  return [Math.log(m)-0.5*s2, Math.sqrt(s2)];
+}
+function randn(){ let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+function simulate(savings, spending, retire, endage, stockW, nSims=10000){
+  const years = Math.max(1, endage - retire);
+  const [mean,std] = portfolioParams(stockW);
+  const [mu,sigma] = lognormalParams(mean,std);
+  const balByYear = Array.from({length:years+1}, ()=> new Float64Array(nSims));
+  const ruinAges = [];
+  let survived = 0;
+  for(let i=0;i<nSims;i++){
+    let bal = savings, ruined = -1;
+    balByYear[0][i] = bal;
+    for(let t=0;t<years;t++){
+      if(bal >= spending){ bal = (bal - spending) * Math.exp(mu + sigma*randn()); }
+      else { if(ruined<0) ruined = t; bal = 0; }
+      balByYear[t+1][i] = bal;
+    }
+    if(ruined<0) survived++; else ruinAges.push(retire + ruined);
+  }
+  const pct = [10,25,50,75,90];
+  const bands = balByYear.map(arr=>{
+    const a = Array.from(arr).sort((x,y)=>x-y);
+    return pct.map(p=> a[Math.floor((p/100)*(a.length-1))]);
+  });
+  const endSorted = Array.from(balByYear[years]).sort((x,y)=>x-y);
+  const medianEnd = endSorted[Math.floor(0.5*(endSorted.length-1))];
+  let medianRuinAge = null;
+  if(ruinAges.length){ ruinAges.sort((a,b)=>a-b); medianRuinAge = ruinAges[Math.floor(0.5*(ruinAges.length-1))]; }
+  let p10RuinAge = null;
+  for(let t=0;t<bands.length;t++){ if(bands[t][0] <= 1){ p10RuinAge = retire + t; break; } }
+  return { successProb: survived/nSims, failProb: 1 - survived/nSims, years, mean, std,
+           bands, medianEnd, medianRuinAge, p10End: bands[years][0], p10RuinAge };
+}
+
+// ---- Display ---------------------------------------------------------------
+function money(v){ const a=Math.abs(v);
+  if(a>=1e6) return '$'+(v/1e6).toFixed(2)+'M';
+  if(a>=1e3) return '$'+Math.round(v/1e3)+'k';
+  return '$'+Math.round(v); }
+function verdictInfo(p){
+  if(p>=0.85) return {label:"Your money is very likely to last", color:GOOD};
+  if(p>=0.70) return {label:"Your money will probably last", color:GOOD};
+  if(p>=0.55) return {label:"It is a close call", color:OK};
+  return {label:"Your money is likely to run short", color:BAD};
+}
+
+let chart=null;
+const $=id=>document.getElementById(id);
+function render(){
+  const savings=+$('savings').value, spending=+$('spending').value, retire=+$('retire').value,
+        endage=+$('endage').value, stockW=+$('stock').value/100;
+  const r = simulate(savings, spending, retire, endage, stockW);
+  const p = r.successProb, pctSuccess = Math.round(p*100), failPct = Math.round(r.failProb*100);
+  const v = verdictInfo(p);
+
+  const C = 2*Math.PI*54;
+  $('ring').setAttribute('stroke', v.color);
+  $('ring').setAttribute('stroke-dashoffset', C*(1-p));
+  $('pctbig').textContent = pctSuccess+'%';
+  $('pctbig').style.color = v.color;
+
+  $('headline').textContent = v.label;
+  $('headline').style.color = v.color;
+  $('read').textContent =
+    `In about ${pctSuccess} out of 100 possible futures, you still have money at age ${endage}. `
+    + `In the other ${100-pctSuccess}, it runs out before then.`;
+
+  // typical (median) outcome
+  $('typVal').textContent = r.medianEnd > 1 ? money(r.medianEnd)+' left' : 'Runs out';
+  $('typSent').textContent = r.medianEnd > 1
+    ? `In the middle case, you would have about ${money(r.medianEnd)} left at age ${endage}, in today's money.`
+    : `In the middle case, the money runs out before age ${endage}.`;
+
+  // worst case
+  if(r.failProb <= 0.005){
+    $('worstVal').textContent = 'Very safe';
+    $('worstSent').textContent = `The money lasts in essentially every simulated future.`;
+  } else {
+    const oneIn = Math.round(1/r.failProb);
+    const ratio = (r.failProb <= 0.5 && oneIn >= 2) ? `That is about 1 in ${oneIn} futures. ` : '';
+    const tail = r.p10RuinAge
+      ? `In the worst 1 in 10, the money runs out around age ${r.p10RuinAge}.`
+      : `Even in the worst 1 in 10, you would have about ${money(r.p10End)} left at age ${endage}.`;
+    $('worstVal').textContent = `${failPct}% chance of running short`;
+    $('worstSent').textContent = ratio + tail;
+  }
+
+  $('detailline').textContent =
+    `You are spending ${(spending/savings*100).toFixed(1)}% of your savings a year. `
+    + `Your ${Math.round(stockW*100)}/${Math.round((1-stockW)*100)} stock-bond mix is assumed to earn about `
+    + `${(r.mean*100).toFixed(1)}% a year after inflation, with ${(r.std*100).toFixed(0)}% volatility `
+    + `(how much returns swing year to year).`;
+  $('assume').textContent =
+    `Assumptions: stocks ${STOCK_MEAN*100}% real return / ${STOCK_STD*100}% volatility, `
+    + `bonds ${BOND_MEAN*100}% / ${BOND_STD*100}%, 10,000 runs, today's dollars. `
+    + `Source: long-run US history (SBBI/Ibbotson, Damodaran).`;
+
+  const ages = Array.from({length:r.years+1}, (_,t)=> retire+t);
+  const col=(o)=>`rgba(16,48,90,${o})`;
+  const series=i=> r.bands.map(b=> b[i]);
+  const ds=(data,fill,bg,border,w)=>({data,fill,backgroundColor:bg,borderColor:border,borderWidth:w,pointRadius:0,tension:.15});
+  const data={ labels:ages, datasets:[
+    ds(series(0), false,'transparent','transparent',0),
+    ds(series(4), 0,    col(.10),   'transparent',0),
+    ds(series(1), false,'transparent','transparent',0),
+    ds(series(3), 2,    col(.20),   'transparent',0),
+    ds(series(2), false,'transparent', col(1), 2),
+  ]};
+  const opts={ responsive:true, animation:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:cx=>money(cx.parsed.y)}}},
+      scales:{ x:{title:{display:true,text:'Age'}, grid:{display:false}},
+               y:{ticks:{callback:v=>money(v)}, title:{display:true,text:'Money left'}}}};
+  if(chart) chart.destroy();
+  chart = new Chart($('chart'), {type:'line', data, options:opts});
+  $('results').classList.remove('hidden');
+}
+
+const stockEl=$('stock');
+function updateMix(){
+  const s=+stockEl.value;
+  $('mixSummary').textContent = `${s}% stocks / ${100-s}% bonds`;
+  $('stockval').textContent = `${s}% stocks`;
+  $('bondval').textContent = `${100-s}% bonds`;
+}
+$('mixBtn').addEventListener('click', ()=> $('mixPanel').classList.toggle('hidden'));
+stockEl.addEventListener('input', updateMix);
+document.querySelectorAll('.chip').forEach(ch=> ch.addEventListener('click', ()=>{
+  $('savings').value=ch.dataset.s; $('spending').value=ch.dataset.p; $('retire').value=ch.dataset.r;
+  $('endage').value=ch.dataset.e; stockEl.value=ch.dataset.w;
+  updateMix(); render();
+}));
+$('run').addEventListener('click', render);
+</script>
+</body>
+</html>
