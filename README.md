@@ -2,7 +2,7 @@
 
 A retirement income Monte Carlo simulator. Enter someone's savings, spending, retirement age, and stock/bond mix, and it returns the probability their money lasts, tested across 10,000 simulated market histories.
 
-**Live demo:** https://leomgama.github.io/retirement-income-simulator/ (enable GitHub Pages first; see below)
+**Live demo:** https://leomgama.github.io/retirement-income-simulator/
 
 ![Fan chart of portfolio balance over retirement](docs/fan_chart.png)
 
