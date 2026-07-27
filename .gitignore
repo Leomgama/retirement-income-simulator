@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+
+# personal, not part of the public repo
+outreach.md
+resume-bullet.md
+how-we-built-it.md
+website-glossary.md
